@@ -11,33 +11,27 @@ namespace 自定义容器
         {
                 private T[] _datas;
 
+                private int _Count;
                 /// <summary>
                 /// 当前元素数量
                 /// </summary>
-                public int Count => _full ? _RingSize : (_front - _rear + _RingSize) % _RingSize;
+                public int Count => _Count;
 
                 private int _RingSize;
 
                 /// <summary>
                 /// 队列容量
                 /// </summary>
-                public int RingSize
-                {
-                        get => _RingSize;
-                        private set => _RingSize = value;
-                }
+                public int RingSize => _RingSize;
 
                 //头部，尾部
                 private int _front,
                 _rear;
 
-                //是否队满
-                private bool _full;
-
                 /// <summary>
                 /// 是否为空
                 /// </summary>
-                public bool IsEmpty => _rear == _front && !_full;
+                public bool IsEmpty => _Count <= 0;
 
                 /// <summary>
                 /// 构造函数
@@ -45,7 +39,7 @@ namespace 自定义容器
                 /// <param name="ringSize">队列大小</param>
                 public RingQueue(int ringSize)
                 {
-                        RingSize = ringSize;
+                        _RingSize = ringSize;
                         _datas = new T[ringSize];
                 }
 
@@ -64,23 +58,23 @@ namespace 自定义容器
                                         queue.Enqueue(item);
                                 }
 
-                                RingSize = queue.Count;
+                                _RingSize = queue.Count;
                                 _datas = queue.ToArray();
-                                _full = true;
+                                _Count = _RingSize;
                                 return;
                         }
-                        RingSize = ringSize;
+                        _RingSize = ringSize;
                         _datas = new T[ringSize];
                         int index = 0;
                         foreach (var data in collection)
                         {
                                 if (index >= ringSize)
                                 {
-                                        _full = true;
                                         index = 0;
                                         break;
                                 }
                                 _datas[index++] = data;
+                                _Count++;
                         }
 
                         _front = index;
@@ -93,9 +87,9 @@ namespace 自定义容器
                 /// <param name="queue">原队列</param>
                 public RingQueue(Queue<T> queue)
                 {
-                        RingSize = queue.Count;
+                        _RingSize = queue.Count;
                         _datas = queue.ToArray();
-                        _full = true;
+                        _Count = _RingSize;
                 }
 
                 #region 迭代器
@@ -115,13 +109,13 @@ namespace 自定义容器
                 {
                         private RingQueue<T> _data;
                         private int _position;
-                        private bool _full;
+                        private int _count;
 
                         public RingQueueEnumerator(RingQueue<T> data)
                         {
                                 _data = data;
                                 _position = data._rear - 1;
-                                _full = data._full;
+                                _count = data._Count;
                         }
 
                         public T Current => _data._datas[_position];
@@ -136,21 +130,13 @@ namespace 自定义容器
 
                         public bool MoveNext()
                         {
-                                _position = (_position + 1) % _data._RingSize;
-                                if (_full) //队满
+                                _position++;
+                                if (_position >= _data.RingSize)
                                 {
-                                        if (_position == _data._front)
-                                        {
-                                                _full = false;
-                                        }
-                                }
-                                else
-                                {
-                                        if (_position == _data._front)
-                                                return false;
+                                        _position = 0;
                                 }
 
-                                return true;
+                                return _count-- > 0;
                         }
 
                         public void Reset()
@@ -167,14 +153,18 @@ namespace 自定义容器
                 /// <param name="item">数据</param>
                 public void Enqueue(T item)
                 {
-                        _datas[_front] = item;
                         //移动队头
-                        _front = (_front + 1) % _RingSize;
-                        if (_full) //队满移动队尾
-                                _rear = _front;
+                        _datas[_front++] = item;
+                        _Count++;
+                        if (_front >= _RingSize)
+                        {
+                                _front = 0;
+                        }
 
-                        if (_front == _rear) //队满
-                                _full = true;
+                        if (_Count >= _RingSize)
+                        {
+                                _Count = _RingSize;
+                        }
                 }
 
                 /// <summary>
@@ -183,12 +173,15 @@ namespace 自定义容器
                 /// <returns>数据</returns>
                 public T Dequeue()
                 {
-                        if (_rear == _front && !_full) //队空
+                        if (_Count <= 0) //队空
                                 return default(T);
-                        T result = _datas[_rear];
                         //移动队尾
-                        _rear = (_rear + 1) % _RingSize;
-                        _full = false; //只要有出队就取消队满状态
+                        T result = _datas[_rear++];
+                        _Count--;
+                        if (_rear >= _RingSize)
+                        {
+                                _rear = 0;
+                        }
                         return result;
                 }
 
@@ -199,15 +192,18 @@ namespace 自定义容器
                 /// <returns>是否成功</returns>
                 public bool TryDequeue(out T result)
                 {
-                        if (_rear == _front && !_full)
+                        if (_Count <= 0)
                         {
                                 result = default(T);
                                 return false;
                         }
-                        result = _datas[_rear];
                         //移动队尾
-                        _rear = (_rear + 1) % _RingSize;
-                        _full = false; //只要有出队就取消队满状态
+                        result = _datas[_rear++];
+                        _Count--;
+                        if (_rear >= _RingSize)
+                        {
+                                _rear = 0;
+                        }
                         return true;
                 }
 
@@ -217,7 +213,7 @@ namespace 自定义容器
                 /// <returns>队头数据</returns>
                 public T Peek()
                 {
-                        if (_rear == _front && !_full)
+                        if (_Count <= 0)
                                 return default(T);
                         int index = (_front - 1 + _RingSize) % _RingSize;
                         return _datas[index];
@@ -230,7 +226,7 @@ namespace 自定义容器
                 /// <returns>是否成功</returns>
                 public bool TryPeek(out T result)
                 {
-                        if (_rear == _front && !_full)
+                        if (_Count <= 0)
                         {
                                 result = default(T);
                                 return false;
@@ -247,12 +243,17 @@ namespace 自定义容器
                 /// <returns>是否包含</returns>
                 public bool Contains(T value)
                 {
+                        if (_Count <= 0)
+                                return false;
+
                         int index = _rear;
                         do
                         {
                                 if (_datas[index].Equals(value))
                                         return true;
-                                index = (index + 1) % _RingSize;
+                                index++;
+                                if (index >= _RingSize)
+                                        index = 0;
                         } while (index != _front);
 
                         return false;
@@ -264,7 +265,7 @@ namespace 自定义容器
                 public void Clear(T fill)
                 {
                         _rear = _front;
-                        _full = false;
+                        _Count = _RingSize;
                         for (int i = 0; i < _RingSize; i++)
                         {
                                 _datas[i] = fill;
@@ -279,50 +280,18 @@ namespace 自定义容器
                 {
                         if (distance <= 0)
                                 return;
-                        if (_full) //队满直接前移 清除队满状态
-                        {
-                                _rear = (_rear + distance) % _RingSize;
-                                _full = false;
-                                return;
-                        }
-
                         //前移距离
                         distance = distance % _RingSize;
 
-                        if (distance >= Count)
+                        if (distance >= _Count)
                         {
                                 _rear = _front;
+                                _Count = 0;
                         }
                         else
                         {
                                 _rear = (_rear + distance) % _RingSize;
-                        }
-                }
-
-                /// <summary>
-                /// 向前移动队头，用于取填充的默认值
-                /// </summary>
-                /// <param name="distance">距离</param>
-                public void PushFront(int distance)
-                {
-                        if (distance <= 0)
-                                return;
-                        if (_full) //队满直接前移并且推动队尾
-                        {
-                                _front = (_front + distance) % _RingSize;
-                                _rear = _front;
-                                return;
-                        }
-                        //前移距离
-                        distance = distance % _RingSize;
-
-                        //空余数量
-                        int e_count = _rear == _front ? _RingSize : (_rear - _front + _RingSize) % _RingSize;
-                        _front = (_front + distance) % _RingSize;
-                        if (e_count <= distance) //队满
-                        {
-                                _rear = _front;
-                                _full = true;
+                                _Count -= distance;
                         }
                 }
 
@@ -332,7 +301,7 @@ namespace 自定义容器
                 public void Clear()
                 {
                         _rear = _front;
-                        _full = false;
+                        _Count = 0;
                 }
         }
 }

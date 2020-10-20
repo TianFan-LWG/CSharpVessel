@@ -84,13 +84,11 @@ namespace 自定义容器
                         for (int i = 0; i < max; i++)
                         {
                                 queue2.Enqueue(random.Next());
-                                if (queue2.Count > 10000)
-                                {
-                                        while (queue2.Count>5000)
-                                        {
-                                                queue2.Dequeue();
-                                        }
-                                }
+                        }
+
+                        while (queue2.Count>0)
+                        {
+                                queue2.Dequeue();
                         }
                         stopwatch.Stop();
                         Console.WriteLine("原队列：{0}",stopwatch.Elapsed);
@@ -99,13 +97,11 @@ namespace 自定义容器
                         for (int i = 0; i < max; i++)
                         {
                                 queue1.Enqueue(random.Next());
-                                if (queue1.Count > 10000)
-                                {
-                                        while (queue1.Count > 5000)
-                                        {
-                                                queue1.Dequeue();
-                                        }
-                                }
+                        }
+
+                        while (!queue1.IsEmpty)
+                        {
+                                queue1.Dequeue();
                         }
                         stopwatch.Stop();
                         Console.WriteLine("环队列：{0}", stopwatch.Elapsed);
