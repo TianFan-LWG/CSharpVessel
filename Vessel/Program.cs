@@ -15,19 +15,19 @@ namespace 自定义容器
         }
         class MyClass
         {
-                public static int A;
-                public int Num;
+                //public static int A;
+                //public int Num;
                 public MyClass1 C1;
-                private int B;
+                // private int B;
                 public MyClass()
                 {
 
                 }
 
-                public void SetB(int b)=> B = b;
+                //public void SetB(int b)=> B = b;
 
 
-                public int GetB => B;
+                //public int GetB => B;
         }
         class Program
         {
@@ -36,8 +36,16 @@ namespace 自定义容器
                         //TestDataPair();
                         //TestDataTree();
                         //TestRingQueue();
-                        //ObjectPool<MyClass> aPool = new ObjectPool<MyClass>(10);
+                        MyClass obj = new MyClass();
+                        obj.C1 = new MyClass1 { C = 20 };
+                        ObjectPool<MyClass> aPool = new ObjectPool<MyClass>(10, true, obj);
 
+                        var a = aPool.GetObject();
+                        for (int i = 0; i < 10; i++)
+                        {
+                                a = aPool.GetObject();
+                        }
+                        Console.WriteLine(a.C1.C);
                         Console.ReadKey();
                 }
 
@@ -76,23 +84,23 @@ namespace 自定义容器
 
                         RingQueue<int> queue1 = new RingQueue<int>(10001);
                         Queue<int> queue2 = new Queue<int>();
-                      
+
                         int max = 10000000;
-                        Random random=new Random();
+                        Random random = new Random();
                         Stopwatch stopwatch = Stopwatch.StartNew();
-                        
+
                         for (int i = 0; i < max; i++)
                         {
                                 queue2.Enqueue(random.Next());
                         }
 
-                        while (queue2.Count>0)
+                        while (queue2.Count > 0)
                         {
                                 queue2.Dequeue();
                         }
                         stopwatch.Stop();
-                        Console.WriteLine("原队列：{0}",stopwatch.Elapsed);
-                        
+                        Console.WriteLine("原队列：{0}", stopwatch.Elapsed);
+
                         stopwatch.Restart();
                         for (int i = 0; i < max; i++)
                         {
@@ -112,8 +120,8 @@ namespace 自定义容器
                         Console.Title = "树列测试";
                         DataTree<int> testTree = new DataTree<int>("Root", 1000);
 
-                        testTree.AddNode("AAA",555).AddNode("bbb",666).AddNode("ccc",777);
-                        testTree.AddNode("bbb",111).AddNode("ccc",222).AddNode("ddd",333);
+                        testTree.AddNode("AAA", 555).AddNode("bbb", 666).AddNode("ccc", 777);
+                        testTree.AddNode("bbb", 111).AddNode("ccc", 222).AddNode("ddd", 333);
 
                         Console.WriteLine(testTree.GetNodeByUri("./AAA/bbb/ccc")?.Data);
                         Console.WriteLine(testTree.GetNodeByUri("/bbb/CCC")?.Data);
@@ -130,7 +138,7 @@ namespace 自定义容器
                         datas.Add("A", 13);
                         datas.Add("A", 14);
                         datas.Add("A", 15);
-                        datas.AddValues(datas,true);
+                        datas.AddValues(datas, true);
 
                         datas["B"] = 11;
                         datas["B"] = 111;
